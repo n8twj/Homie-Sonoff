@@ -9,6 +9,13 @@
 #define INTERVAL 60
 
 unsigned long lastSent = 0;
+int relayState = LOW; 
+bool stateChange = false; 
+
+int buttonState;                     // the current reading from the input pin
+int lastButtonState = LOW;           // the previous reading from the input pin
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -28,7 +35,6 @@ bool switchHandler(HomieRange range, String value) {
   } else {
     return false;
   }
-
   return true;
 }
 
@@ -70,5 +76,25 @@ void setup() {
 }
 
 void loop() {
+  int reading = digitalRead(PIN_BUTTON);
+  if (reading != lastButtonState) {
+    lastDebounceTime = millis();
+  }
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (reading != buttonState) {
+      buttonState = reading;
+       if (buttonState == HIGH) {
+        stateChange = true;
+        relayState = !relayState;
+      }
+    }
+  }
+  lastButtonState = reading;
+  if (stateChange) { 
+    digitalWrite(PIN_RELAY, relayState);
+    digitalWrite(PIN_LED, !relayState); // LED state is inverted on Sonoff TH
+    Homie.setNodeProperty(switchNode, "on").send( (relayState == HIGH)? "true" : "false" );
+    stateChange = false;
+  }  
   Homie.loop();
 }
