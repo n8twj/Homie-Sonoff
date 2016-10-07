@@ -48,7 +48,7 @@ void loopHandler() {
      float humidity = dht.readHumidity();
      float temperature = dht.readTemperature(true);
      Homie.setNodeProperty(temperatureNode, "F").send(String(temperature));
-     Homie.setNodeProperty(humidityNode, "F").send(String(humidity));
+     Homie.setNodeProperty(humidityNode, "percent").send(String(humidity));
      lastSent = millis();
   }
 }
